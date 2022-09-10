@@ -38,8 +38,6 @@ def greet_user(update, context): #  вопрос - зачем нужен арг�
 def constellation_search(update, planet_name):
   planet = getattr(ephem, planet_name.capitalize())()
   update.message.reply_text(str(ephem.constellation(planet)))
-
-Зачем мы обращаемся к getattr?
   
 # Напишем функцию planet_name, которая будет получать от пользователя название планеты
 def get_planet_name(update, context):
