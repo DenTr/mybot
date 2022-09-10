@@ -1,20 +1,57 @@
+"""
+Домашнее задание №1
+
+Использование библиотек: ephem
+
+* Установите модуль ephem
+* Добавьте в бота команду /planet, которая будет принимать на вход
+  название планеты на английском, например /planet Mars
+* В функции-обработчике команды из update.message.text получите
+  название планеты (подсказка: используйте .split())
+* При помощи условного оператора if и ephem.constellation научите
+  бота отвечать, в каком созвездии сегодня находится планета.
+
+"""
+
 # Импортируем нужные компоненты
 import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import settings
+import ephem
 
-logging.basicConfig(filename='bot.log', level=logging.INFO)
+# Теперь, настроим логирование. Будем записывать все сообщения уровня INFO и выше в файл bot.log.
+logging.basicConfig(format='%(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO,
+                    filename='bot.log')
 
-def greet_user(update, context):
-    print('Вызван /start')
-    update.message.reply_text('Привет, пользователь! Ты вызвал команду /start')
+# создадим список планет из ephem
+list_planets = []
+for planet in range(8):
+  list_planets.append(ephem._libastro.builtin_planets()[planet][2].lower())
 
-# Напишем функцию talk_to_me, которая будет "отвечать" пользователю
-def talk_to_me(update, context):
-    user_text = update.message.text 
-    print(user_text)
-    update.message.reply_text(user_text)
+def greet_user(update, context): #  вопрос - зачем нужен аргумент context?
+    text = 'Привет, пользователь!'
+    print(text) # эта строка распечатывает текст внутри терминала
+    update.message.reply_text(text) # эта строка передает информацию от бота пользователю внутри телеграмма
 
+# создаем функция для определения созвездия
+def constellation_search(update, planet_name):
+  planet = getattr(ephem, planet_name.capitalize())()
+  update.message.reply_text(str(ephem.constellation(planet)))
+
+# Напишем функцию planet_name, которая будет получать от пользователя название планеты
+def get_planet_name(update, context):
+    text = 'Вызван /planet'
+    print(text)
+    update.message.reply_text('Введите название планеты')  # сообщение от бота внутри телеграмма
+    planet_name = update.message.text.lower() # это передача инормации от пользователя в телеграмм
+    
+    if planet_name not in list_planets:
+      update.message.reply_text('Вы точно ввели имя планеты?')
+      update.message.reply_text('Надо ввести имя планеты из Солнечной системы')
+    else:
+      update.message.reply_text(constellation_search(update, planet_name))
+ 
 # Функция, которая соединяется с платформой Telegram, "тело" нашего бота
 def main():
     # Создаем бота и передаем ему ключ для авторизации на серверах Telegram
@@ -24,7 +61,8 @@ def main():
     dp.add_handler(CommandHandler("start", greet_user))
     
     # укажем, что мы хотим реагировать только на текстовые сообщения - Filters.text
-    dp.add_handler(MessageHandler(Filters.text, talk_to_me))
+    # dp.add_handler(MessageHandler(Filters.text, planet_name))
+    dp.add_handler(CommandHandler("planet", get_planet_name))
 
     # залогируем в файл информацию о старте бота
     logging.info("Бот стартовал")
